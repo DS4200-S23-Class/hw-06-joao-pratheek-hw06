@@ -56,12 +56,12 @@ d3.csv("data/iris.csv").then((data) => {
           if (d.Species === "setosa") {
             return "green";
           } else if (d.Species === "versicolor") {
-            return "red";
+            return "orange";
           } else {
             return "blue";
           } 
         })
-        .attr("opacity", 0.5)
+        .attr("opacity", 0.4)
         .attr("class", "point");
 
   // adds an X and Y axis to the vis  
@@ -88,6 +88,8 @@ const FRAME2 = d3.select("#vis2")
                     .attr("height", FRAME_HEIGHT)
                     .attr("width", FRAME_WIDTH)
                     .attr("class", "frame"); 
+
+
 
 // builds first scatter plot
 function build_interative_scatter2() {
@@ -123,12 +125,12 @@ d3.csv("data/iris.csv").then((data2) => {
           if (d.Species === "setosa") {
             return "green";
           } else if (d.Species === "versicolor") {
-            return "red";
+            return "orange";
           } else {
             return "blue";
           } 
         })
-        .attr("opacity", 0.5)
+        .attr("opacity", 0.4)
         .attr("class", "point");
 
   // adds an X and Y axis to the vis  
@@ -142,7 +144,40 @@ d3.csv("data/iris.csv").then((data2) => {
         .attr("transform", "translate(" + MARGINS.left + 
               "," + MARGINS.top + ")") 
         .call(d3.axisLeft(Y_SCALE2)) 
-          .attr("font-size", '15px'); 
+          .attr("font-size", '15px');
+
+  // adds brush event listener to the vis
+  const brush = d3.brush()
+      .extent([[MARGINS.left, MARGINS.top], [MARGINS.left + VIS_WIDTH, MARGINS.top + VIS_HEIGHT]])
+      .on("brush", brushHandler);
+
+  FRAME2.append("g")
+      .call(brush);
+
+  // defines brush handler function
+  function brushHandler(event) {
+      
+      const selection = event.selection;
+      
+      const selectedPoints = [];
+
+      // iterates over all points and checks if they're in the selection
+      FRAME2.selectAll(".point").each(function(d) {
+          const x = parseFloat(d3.select(this).attr("cx"));
+          const y = parseFloat(d3.select(this).attr("cy"));
+          if (x >= selection[0][0] && x <= selection[1][0] && y >= selection[0][1] && y <= selection[1][1]) {
+              selectedPoints.push(d);
+              d3.select(this)
+                  .attr("opacity", 1)
+                  .attr("stroke", "red")
+                  .attr("stroke-width", 2);
+          } else {
+              d3.select(this)
+                  .attr("opacity", 0.4)
+                  .attr("stroke", "none");
+        }
+      });
+    } 
   });
 }
 
@@ -150,7 +185,7 @@ d3.csv("data/iris.csv").then((data2) => {
 build_interative_scatter2();
 
 // builds bar graph
-function build_interative_bar_graph() {
+function build_interactive_bar_graph() {
 
 // selects the vis1 element and appends an svg element
 const FRAME3 = d3.select("#vis3")
@@ -161,34 +196,35 @@ const FRAME3 = d3.select("#vis3")
 
 // reads data from the csv file
 d3.csv("data/iris.csv").then((data3) => {
+
+  const dataset = data3.map(d => ({ species: d.Species, count: 50}));
   
   // defines scale function that maps X and Y data values 
   // (domain) to pixel values (range)
   const X_SCALE3 = d3.scaleBand() 
-                    .domain(["setosa", "versicolor", "virginica"])
+                    .domain(dataset.map(d => d.species))
                     .range([0, VIS_WIDTH])
                     .padding(0.2);
 
-  const Y_SCALE3 = d3.scaleBand() 
-                  .domain([100, 0])
-                  .range([0, VIS_HEIGHT])
-                  .padding(0.2);
+  const Y_SCALE3 = d3.scaleLinear() 
+                  .domain([0, 60])
+                  .range([VIS_HEIGHT, 0]);
 
   // uses X and Y scales to plot the rectangles
   FRAME3.selectAll("rect")  
-      .data(data3)
+      .data(dataset)
       .enter()       
       .append("rect")  
-        .attr("x", (d) => { return (X_SCALE3(d.Species) + MARGINS.left); }) 
-        .attr("y", 50) 
+        .attr("x", (d) => X_SCALE3(d.species) + MARGINS.left) 
+        .attr("y", (d) => Y_SCALE3(d.count) + MARGINS.top)
         .attr("width", X_SCALE3.bandwidth())
-        .attr("height", VIS_HEIGHT - 60)
-        .attr("opacity", 0.5)
+        .attr("height", (d) => VIS_HEIGHT - Y_SCALE3(d.count))
+        .attr("opacity", 0.4) 
         .attr("fill", (d) => { 
-          if (d.Species === "setosa") {
+          if (d.species === "setosa") {
             return "green";
-          } else if (d.Species === "versicolor") {
-            return "red";
+          } else if (d.species === "versicolor") {
+            return "orange";
           } else {
             return "blue";
           } 
@@ -210,4 +246,4 @@ d3.csv("data/iris.csv").then((data3) => {
 }
 
 // calls function 
-build_interative_bar_graph();
+build_interactive_bar_graph();

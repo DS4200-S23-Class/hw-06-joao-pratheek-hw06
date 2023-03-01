@@ -29,17 +29,10 @@ body {
     text-align: center;
 }
 
-circle.selected {
+.selected {
     opacity: 1 !important;
     stroke: orange;
     stroke-width: 2px;
-}
-
-rect.selected {
-    opacity: 1 !important;
-    border: 2px;
-    border-style: solid;
-    border-color: orange;
 }
 
 .acknowledgements {

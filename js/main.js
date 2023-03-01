@@ -17,7 +17,7 @@ const VIS_WIDTH = FRAME_WIDTH - MARGINS.left - MARGINS.right;
 
 // selects the vis1 element and appends an svg element
 const FRAME1 = d3.select("#vis1")
-                    .append("svg")
+                  .append("svg")
                     .attr("height", FRAME_HEIGHT)
                     .attr("width", FRAME_WIDTH)
                     .attr("class", "frame"); 
@@ -60,25 +60,25 @@ function build_interative_scatter1() {
 
     // adds an X and Y axis to the vis  
     FRAME1.append("g") 
-           .attr("transform", "translate(" + MARGINS.left + 
+            .attr("transform", "translate(" + MARGINS.left + 
                  "," + (VIS_HEIGHT + MARGINS.top) + ")") 
             .call(d3.axisBottom(X_SCALE)) 
-             .attr("font-size", '15px');
+              .attr("font-size", '15px');
 
     FRAME1.append("g") 
           .attr("transform", "translate(" + MARGINS.left + 
                 "," + MARGINS.top + ")") 
           .call(d3.axisLeft(Y_SCALE)) 
-            .attr("font-size", '15px'); 
-          });
+            .attr("font-size", '15px');
+  });
 }
 
 // calls function 
 build_interative_scatter1();
 
-// selects the vis1 element and appends an svg element
+// selects the vis2 element and appends an svg element
 const FRAME2 = d3.select("#vis2")
-                    .append("svg")
+                  .append("svg")
                     .attr("height", FRAME_HEIGHT)
                     .attr("width", FRAME_WIDTH)
                     .attr("class", "frame"); 
@@ -92,12 +92,12 @@ function build_interative_scatter2() {
     // defines scale function that maps X and Y data values 
     // (domain) to pixel values (range)
     const X_SCALE2 = d3.scaleLinear() 
-                      .domain([0, 5])
-                      .range([0, VIS_WIDTH]); 
+                       .domain([0, 5])
+                       .range([0, VIS_WIDTH]); 
 
     const Y_SCALE2 = d3.scaleLinear() 
-                      .domain([3, 0]) 
-                      .range([0, VIS_HEIGHT]); 
+                       .domain([3, 0]) 
+                       .range([0, VIS_HEIGHT]); 
 
     // uses X and Y scales to plot the points
     FRAME2.selectAll("circle")  
@@ -114,68 +114,74 @@ function build_interative_scatter2() {
               return "brown";
             } else {
               return "blue";
-            } 
+            }
           })
           .attr("opacity", 0.5)
           .attr("class", (d) => "unique-id" + d.id);
 
     // adds an X and Y axis to the vis  
     FRAME2.append("g") 
-          .attr("transform", "translate(" + MARGINS.left + 
+            .attr("transform", "translate(" + MARGINS.left + 
                 "," + (VIS_HEIGHT + MARGINS.top) + ")") 
-          .call(d3.axisBottom(X_SCALE2)) 
-           .attr("font-size", '15px');
+            .call(d3.axisBottom(X_SCALE2)) 
+              .attr("font-size", '15px');
 
     FRAME2.append("g") 
-          .attr("transform", "translate(" + MARGINS.left + 
+            .attr("transform", "translate(" + MARGINS.left + 
                 "," + MARGINS.top + ")") 
-          .call(d3.axisLeft(Y_SCALE2)) 
-            .attr("font-size", '15px');
+            .call(d3.axisLeft(Y_SCALE2)) 
+              .attr("font-size", '15px');
 
+    // adds brushing to FRAME2
     FRAME2.append("g")
-        .attr("transform", "translate(" + MARGINS.left + "," + MARGINS.top + ")")
-        .call(d3.brush()
-          .extent([[0, 0], [VIS_WIDTH, VIS_HEIGHT]])
-          .on("brush", brushHandler)
-          .on("end", brushEndHandler));
+            .attr("transform", "translate(" + MARGINS.left + "," + MARGINS.top + ")")
+            .call(d3.brush()
+            .extent([[0, 0], [VIS_WIDTH, VIS_HEIGHT]])
+            .on("brush", handleBrush)
+            .on("end", handleBrushEnd));
 
-    // function to handle brushing
-    function brushHandler(event) {
+    // function to handle brushing over FRAME2
+    function handleBrush(event) {
 
-        const extent = event.selection;
+        const selection = event.selection;
 
-        let selectedData = [];
+        let selectedPoints = [];
 
+        // selects all circles in FRAME2
+        // adds/removes a class to each circle depending on brush
         FRAME2.selectAll("circle")
-                .classed("selected", function(d) { 
-          
-                  const brushed = extent && isBrushed(extent, X_SCALE2(d.Sepal_Width), Y_SCALE2(d.Petal_Width));
-                  d3.select(this).classed("selected", brushed);
-                  if (brushed) {
-                    selectedData.push(d.id);
-                  }
-                  return brushed;
-                });
+              .classed("selected", function(d) {
+                const brushed = selection && isBrushed(selection, X_SCALE2(d.Sepal_Width), Y_SCALE2(d.Petal_Width));
+                d3.select(this).classed("selected", brushed);
+                if (brushed) {
+                  selectedPoints.push(d.id);
+                }
+                return brushed;
+              });
 
+        // selects all circles in FRAME1
+        // adds a class if id is in selectedPoints
         FRAME1.selectAll("circle")
               .classed("selected", function(d) {
-                const isSelected = selectedData.includes(d.id);
+                const isSelected = selectedPoints.includes(d.id);
                 d3.select(this)
                   .classed("selected", isSelected);
                 return isSelected;
               });
 
+        // selects all rects in FRAME3
+        // adds a class if id is in selectedPoints 
         FRAME3.selectAll("rect")
               .classed("selected", function(d) {
-                const isSelected = selectedData.includes(d.id);
+                const isSelected = selectedPoints.includes(d.id);
                 d3.select(this)
                   .classed("selected", isSelected);
                 return isSelected;
               });
           }
 
+    // returns true or false depending on whether coordinates are in the brush
     function isBrushed(brush_coords, cx, cy) {
-
       const x0 = brush_coords[0][0],
             x1 = brush_coords[1][0],
             y0 = brush_coords[0][1],
@@ -183,7 +189,8 @@ function build_interative_scatter2() {
       return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
     }
 
-    function brushEndHandler(event) {
+    // removes brush selection
+    function handleBrushEnd(event) {
       if (!event.selection) {
         d3.selectAll(".selected").classed("selected", false);
       }
@@ -194,7 +201,7 @@ function build_interative_scatter2() {
 // calls function 
 build_interative_scatter2();
 
-// selects the vis1 element and appends an svg element
+// selects the vis3 element and appends an svg element
 const FRAME3 = d3.select("#vis3")
                     .append("svg")
                     .attr("height", FRAME_HEIGHT)
@@ -207,18 +214,11 @@ function build_interactive_bar_graph() {
 // reads data from the csv file
 d3.csv("data/iris.csv").then((data3) => {
 
+  // stores unique species from the dataset and gives them a count of 50
   const dataset = [];
-  const uniqueSpecies = {};
+  const uniqueSpecies = new Set(data3.map(d => d.Species));
+  uniqueSpecies.forEach(Species => dataset.push({ Species, count: 50 }));
 
-  for (let i = 0; i < data3.length; i++) {
-    const species = data3[i].Species;
-
-    if (!uniqueSpecies[species]) {
-      uniqueSpecies[species] = true;
-      dataset.push({species, count: 50});
-    }
-  }
-  
   // defines scale function that maps X and Y data values 
   // (domain) to pixel values (range)
   const X_SCALE3 = d3.scaleBand() 
@@ -232,40 +232,41 @@ d3.csv("data/iris.csv").then((data3) => {
 
   // uses X and Y scales to plot the rectangles
   FRAME3.selectAll("rect")  
-      .data(dataset)
-      .enter()       
-      .append("rect")  
-        .attr("x", (d) => X_SCALE3(d.species) + MARGINS.left) 
-        .attr("y", (d) => Y_SCALE3(d.count) + MARGINS.top)
-        .attr("width", X_SCALE3.bandwidth())
-        .attr("height", (d) => VIS_HEIGHT - Y_SCALE3(d.count))
-        .attr("fill", (d) => { 
-          if (d.species === "setosa") {
-            return "green";
-          } else if (d.species === "versicolor") {
-            return "brown";
-          } else {
-            return "blue";
-          } 
-        })
-        .attr("opacity", 0.5) 
-        .attr("class", (d) => "unique-id" + d.id);
+        .data(dataset)
+        .enter()       
+        .append("rect")  
+          .attr("x", (d) => X_SCALE3(d.Species) + MARGINS.left) 
+          .attr("y", (d) => Y_SCALE3(d.count) + MARGINS.top)
+          .attr("width", X_SCALE3.bandwidth())
+          .attr("height", (d) => VIS_HEIGHT - Y_SCALE3(d.count))
+          .attr("fill", (d) => { 
+            if (d.Species === "setosa") {
+              return "green";
+            } else if (d.Species === "versicolor") {
+              return "brown";
+            } else {
+              return "blue";
+            }
+          })
+          .attr("opacity", 0.5) 
+          .attr("class", (d) => "unique-id" + d.id);
 
   // adds an X and Y axis to the vis  
   FRAME3.append("g") 
-        .attr("transform", "translate(" + MARGINS.left + 
-              "," + (VIS_HEIGHT + MARGINS.top) + ")") 
-        .call(d3.axisBottom(X_SCALE3)) 
-          .attr("font-size", '15px');
+          .attr("transform", "translate(" + MARGINS.left + 
+                "," + (VIS_HEIGHT + MARGINS.top) + ")") 
+          .call(d3.axisBottom(X_SCALE3)) 
+            .attr("font-size", '15px');
 
   FRAME3.append("g") 
-        .attr("transform", "translate(" + MARGINS.left + 
-              "," + MARGINS.top + ")") 
-        .call(d3.axisLeft(Y_SCALE3)) 
-          .attr("font-size", '15px'); 
+          .attr("transform", "translate(" + MARGINS.left + 
+                "," + MARGINS.top + ")") 
+          .call(d3.axisLeft(Y_SCALE3)) 
+            .attr("font-size", '15px');
   });
 }
 
 // calls function 
 build_interactive_bar_graph();
+
 
